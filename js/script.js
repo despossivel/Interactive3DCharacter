@@ -19,6 +19,7 @@
   function init() {
 
     const MODEL_PATH = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy_lightweight.glb';
+    // const MODEL_PATH = './static/exo.glb';
     const canvas = document.querySelector('#c');
     const backgroundColor = 0xf1f1f1;
 

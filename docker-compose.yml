@@ -1,0 +1,9 @@
+version: '2'
+services:
+  nginx:
+    build: ./.docker
+    ports:
+      - '8888:80'
+    volumes:
+      - .:/opt/work
+    container_name: nginx
