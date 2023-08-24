@@ -1,4 +1,8 @@
+
+
 (function () {
+
+  let textMesh;
   // Set our main variables
   let scene,
     renderer,
@@ -21,7 +25,7 @@
     const MODEL_PATH = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy_lightweight.glb';
     // const MODEL_PATH = './static/exo.glb';
     const canvas = document.querySelector('#c');
-    const backgroundColor = 0xf1f1f1;
+    const backgroundColor = `#333`;
 
     // Init the scene
     scene = new THREE.Scene();
@@ -144,7 +148,7 @@
     // Floor
     let floorGeometry = new THREE.PlaneGeometry(5000, 5000, 1, 1);
     let floorMaterial = new THREE.MeshPhongMaterial({
-      color: 0xeeeeee,
+      color: `#292929`,
       shininess: 0
     });
 
@@ -155,14 +159,58 @@
     floor.position.y = -11;
     scene.add(floor);
 
-    let geometry = new THREE.SphereGeometry(8, 32, 32);
-    let material = new THREE.MeshBasicMaterial({ color: 0x9bffaf }); // 0xf2ce2e 
-    let sphere = new THREE.Mesh(geometry, material);
+    // Criando um cubo
+    const geometry = new THREE.BoxGeometry(8, 2);
+    const material = new THREE.MeshBasicMaterial({ color: `#f2f2f2` });
+    const cube = new THREE.Mesh(geometry, material);
+    cube.position.z = -15;
+    cube.position.y = 2;
+    cube.position.x = 7.25;
 
-    sphere.position.z = -15;
-    sphere.position.y = -2.5;
-    sphere.position.x = -0.25;
-    scene.add(sphere);
+    scene.add(cube);
+
+
+    createOrUpdateText('Hi Boy!')
+
+  }
+
+ 
+  document.getElementById('updateText').addEventListener('click', function(){
+
+
+    updateText()
+
+
+  })
+
+  function updateText() {
+    const newText = prompt("Digite o novo texto:");
+    if (newText) {
+      createOrUpdateText(newText);
+    }
+  }
+
+
+  // Função para criar ou atualizar o texto
+  function createOrUpdateText(text) {
+
+    if (textMesh) {
+      scene.remove(textMesh);
+    }
+
+    const loaderFont = new THREE.FontLoader();
+    loaderFont.load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+      const textGeometry = new THREE.TextGeometry(text, {
+        font: font,
+        size: 0.5,
+        height: 0.1,
+      });
+
+      const textMaterial = new THREE.MeshBasicMaterial({ color: `#000` });
+      textMesh = new THREE.Mesh(textGeometry, textMaterial);
+      textMesh.position.set(3.7, 1.7, -14); // Ajuste a posição do texto conforme necessário
+      scene.add(textMesh);
+    });
   }
 
 
@@ -202,9 +250,6 @@
   window.addEventListener('touchend', e => raycast(e, true));
 
   function raycast(e, touch = false) {
-    console.log(THREE.Math)
-
-
     var mouse = {};
     if (touch) {
       mouse.x = 2 * (e.changedTouches[0].clientX / window.innerWidth) - 1;
@@ -232,10 +277,14 @@
     }
   }
 
+
+
+
+
   // Get a random animation, and play it 
   function playOnClick() {
     let anim = Math.floor(Math.random() * possibleAnims.length) + 0;
-    playModifierAnimation(idle, 0.25, possibleAnims[6], 0.25);
+    playModifierAnimation(idle, 0.25, possibleAnims[anim], 0.25);
   }
 
 
@@ -251,12 +300,13 @@
     }, to._clip.duration * 1000 - (tSpeed + fSpeed) * 1000);
   }
 
-  document.addEventListener('mousemove', function (e) {
+  document.addEventListener('click', function (e) {
     var mousecoords = getMousePos(e);
     if (neck && waist) {
 
-      moveJoint(mousecoords, neck, 50);
-      moveJoint(mousecoords, waist, 30);
+      // moveToTalk(mousecoords, neck, 50)
+      // moveJoint(mousecoords, neck, 50);
+      // moveJoint(mousecoords, waist, 30);
     }
   });
 
@@ -271,25 +321,17 @@
   // no memomento esta pegando a possicao do mouse para movimentar o boneco
 
 
+
+
   function moveJoint(mouse, joint, degreeLimit) {
     let degrees = getMouseDegrees(mouse.x, mouse.y, degreeLimit);
 
-    // _x
-    // :
-    // 0.10273588966407758
-    // _y
-    // :
-    // 0.510134807082914
-    // _z
-    // :
-    // 0.01840086072420852
 
 
+    // joint.rotation.y = THREE.Math.degToRad(degrees.x);
+    // joint.rotation.x = THREE.Math.degToRad(degrees.y);
 
-    joint.rotation.y = THREE.Math.degToRad(degrees.x);
-    joint.rotation.x = THREE.Math.degToRad(degrees.y);
-
-    console.log(joint.rotation)
+    // console.log(joint.rotation)
   }
 
   function getMouseDegrees(x, y, degreeLimit) {

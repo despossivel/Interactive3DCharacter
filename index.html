@@ -10,14 +10,14 @@
 	<meta name="author" content="Codrops" />
 	<link rel="shortcut icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="css/base.css" />
-	<script>
+	<!-- <script>
 		document.documentElement.className = "js";
 		var supportsCssVars = function () {
 			var e, t = document.createElement("style");
 			return t.innerHTML = "root: { --tmp-var: bold; }", document.head.appendChild(t), e = !!(window.CSS && window.CSS.supports && window.CSS.supports("font-weight", "var(--tmp-var)")), t.parentNode.removeChild(t), e
 		};
 		supportsCssVars() || alert("Please view this demo in a modern browser that supports CSS Variables.");
-	</script>
+	</script> -->
 </head>
 
 <body>
@@ -29,19 +29,35 @@
 		<canvas id="c"></canvas>
 	</div>
 	<div class="frame">
-		<h1 class="frame__title">Interactive 3D Character with Three.js</h1>
+		
+		<div class="dialog">
+			<div>
+				<button id="updateText">Update Text</button>
+
+			</div>
+		</div>
+		<!-- <h1 class="frame__title">Interactive 3D</h1>
 		<div class="frame__links">
 			<a href="http://tympanus.net/Tutorials/Blurry/">Previous demo</a>
 			<a href="https://tympanus.net/codrops/?p=43796">Tutorial</a>
-		</div>
+		</div> -->
 	</div>
-	<span class="action">Click me!</span>
+	<!-- <span class="action">Click me!</span> -->
 	<!-- The main Three.js file -->
-	<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js'></script>
+	<!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.min.js'></script> -->
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+
 	<!-- This brings in the ability to load custom 3D objects in the .gltf file format. Blender allows the ability to export to this format out the box -->
 	<script src='https://cdn.jsdelivr.net/gh/mrdoob/Three.js@r92/examples/js/loaders/GLTFLoader.js'></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/three-text2d@0.6.0/dist/three-text2d.min.js"></script>
 	<!-- partial -->
-	<script src="js/script.js"></script>
+	<!-- <script src="https://cdn.rawgit.com/vasturiano/three-text2d/0.7.0/dist/three-text2d.min.js"></script> -->
+
+
+	<script  src="js/script.js"></script>
 </body>
 
 </html>
