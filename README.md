@@ -1,3 +1,5 @@
+https://tympanus.net/codrops/2019/10/14/how-to-create-an-interactive-3d-character-with-three-js/
+
 # Interactive 3D Character with Three.js
 
 Demo for the tutorial on how to add an interactive 3D character to a website.
