@@ -1,30 +1,244 @@
+import { useEffect } from 'react'
+import './App.css'
+import * as THREE from 'three';
+import {
+  useAudio,
+  useWebSocket
+} from "tryvoice"
+
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
+
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 
 
-(function () {
 
-  let textMesh;
-  // Set our main variables
-  let scene,
-    renderer,
-    camera,
-    model, // Our character
-    neck, // Reference to the neck bone in the skeleton
-    waist, // Reference to the waist bone in the skeleton
-    possibleAnims, // Animations found in our file
-    mixer, // THREE.js animations mixer
-    idle, // Idle, the default state our character returns to
-    clock = new THREE.Clock(), // Used for anims, which run to a clock instead of frame rate 
-    currentlyAnimating = false, // Used to check whether characters neck is being used in another anim
-    raycaster = new THREE.Raycaster() // Used to detect the click on our character
-    // loaderAnim = document.getElementById('js-loader');
+let textMesh;
+// Set our main variables
+let scene,
+  renderer,
+  camera,
+  model, // Our character
+  neck, // Reference to the neck bone in the skeleton
+  waist, // Reference to the waist bone in the skeleton
+  possibleAnims, // Animations found in our file
+  mixer, // THREE.js animations mixer
+  idle, // Idle, the default state our character returns to
+  clock = new THREE.Clock(), // Used for anims, which run to a clock instead of frame rate 
+  currentlyAnimating = false, // Used to check whether characters neck is being used in another anim
+  raycaster = new THREE.Raycaster() // Used to detect the click on our character
+// loaderAnim = document.getElementById('js-loader');
 
-  init();
+
+
+
+function App() {
+  const {
+    audioLoader,
+
+    micAudio,
+    audioReceive,
+
+    resetBase64StringStreamAudio,
+
+    startRecording,
+    stopRecording,
+    mediaRecorder,
+    // setMediaRecorder,
+    // setSumRecording,
+
+    noSpeech,
+    recognitionTranscript,
+    // sumRecording,
+    recordingDone,
+    dataavailable,
+
+
+    actionStop,
+    actionStart,
+    actionPause
+  } = useAudio()
+
+
+  const {
+    socket,
+    ONstarted,
+    connectSocket,
+
+    upload,
+    ONtextTranscriptNotVoice,
+    ONtextTranscript,
+    ONtextResponse,
+    ONhistoricUpdate,
+    ONaudio,
+
+    disconnect,
+    ONtextSpeech,
+
+  } = useWebSocket()
+
+
+  const START = async () => {
+    await actionStart()
+    await SEND_TEXT_SPEECH()
+  }
+
+  const STOP = async () => {
+    await actionStop()
+  }
+
+  const PAUSE = async () => {
+    await actionPause()
+  }
+
+  const SEND = async () => {
+    stopRecording(mediaRecorder)
+  }
+
+  const SEND_TEXT_SPEECH = async () => {
+    await ONtextSpeech({
+      voice: 'pt-BR-Standard-B',
+      text: null
+
+    })
+  }
+
+  useEffect(() => {
+    if (noSpeech) {
+
+      ONtextSpeech({
+        voice: 'pt-BR-Standard-B',
+        text: "Tente falar mais proximo do microfone e nitidamente."
+      })
+
+    }
+  }, [noSpeech])
+
+  useEffect(() => {
+    (async () => {
+      try {
+
+        const socket = await connectSocket({ host: 'http://192.168.0.108:3000', sub: '341964aa-f385-4489-878a-6db0a8798901', token: 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6IC…Bi87QsfSvMK8SX6GJX2o5uGpo9oCgyoCOZ_1VsbCDUHsU4JYQ' })
+
+
+        return () => socket.disconnect();
+
+      } catch (e) {
+        console.error(e)
+      }
+    })()
+  }, [
+    // initialized, keycloak, keycloak?.token
+  ]);
+
+
+
+
+
+  useEffect(() => {
+    try {
+
+      if (!socket) return;
+
+      console.log('sss', socket)
+
+      ONstarted(async () => {
+        await resetBase64StringStreamAudio()
+        // audioLoad(audioLoader, 'assets/audios/junggle__btn402.wav')
+
+      })
+
+      ONtextTranscriptNotVoice(async () => {
+
+        // audioLoad(audioLoader, 'assets/audios/junggle__btn402.wav')
+        startRecording()
+        await resetBase64StringStreamAudio()
+
+        console.log('ONtextTranscriptNotVoice: ', ONtextTranscriptNotVoice)
+
+      })
+
+      ONtextTranscript(async (text) => {
+        console.log('ONtextTranscript: ', {
+          msg: text,
+          from: 'me'
+        })
+      })
+
+      ONtextResponse((text) => {
+        console.log('ONtextResponse: ', {
+          msg: text,
+          from: 'them'
+        })
+
+        createOrUpdateText(text)
+      })
+
+      ONhistoricUpdate((data) => {
+        console.log('ONHISTORICUPDATE: ', data.id)
+      })
+
+      ONaudio(async (data) => {
+
+        await resetBase64StringStreamAudio()
+
+        const blob = new Blob([data]);
+        const audioUrlReceive = URL.createObjectURL(blob);
+        audioReceive.current.src = audioUrlReceive;
+        audioReceive.current.play();
+
+        console.log("ONaudio: ", data)
+
+        playOnClick()
+
+      })
+
+
+
+      disconnect(() => console.log('websocket disconnect'))
+
+    } catch (err) {
+      console.error(err)
+    }
+  }, [socket]);
+
+
+
+  useEffect(() => {
+
+
+    dataavailable(async (BUFFER) => {
+
+      await Promise.all([
+        upload({
+          modelAi: 'Friend chat',
+          coreAiCurrent: 'chatgpt',
+          interationID: '3333333',
+          LANGUAGE_CODE: (navigator.language || navigator.userLanguage),
+          base64StringStreamAudio: BUFFER,
+          recognitionTranscript,
+          voiceCurrent: 'pt-BR-Standard-B'
+        }),
+        resetBase64StringStreamAudio()
+      ])
+
+
+    })
+
+
+
+  }, [mediaRecorder, recognitionTranscript, recordingDone])
+
+
+
+
 
   function init() {
 
     const MODEL_PATH = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy_lightweight.glb';
     // const MODEL_PATH = './static/exo.glb';
-    const canvas = document.querySelector('#c');
+    const canvas = window.document.querySelector('#c');
     const backgroundColor = `#333`;
 
     // Init the scene
@@ -60,7 +274,7 @@
 
 
 
-    var loader = new THREE.GLTFLoader();
+    var loader = new GLTFLoader();
 
     loader.load(
       MODEL_PATH,
@@ -174,16 +388,15 @@
 
   }
 
- 
 
 
+  useEffect(() => {
+    init()
+    update();
+
+  }, [])
 
 
-
-
-  document.getElementById('updateText').addEventListener('click', function(){
-    updateText()
-  })
 
   function updateText() {
     const newText = prompt("Digite o novo texto:");
@@ -200,15 +413,17 @@
       scene.remove(textMesh);
     }
 
-    const loaderFont = new THREE.FontLoader();
+
+    console.log('THREE: ', THREE)
+    const loaderFont = new FontLoader();
     loaderFont.load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json', function (font) {
-      const textGeometry = new THREE.TextGeometry(text, {
+      const textGeometry = new TextGeometry(text, {
         font: font,
         size: 0.5,
         height: 0.1,
       });
 
-      const textMaterial = new THREE.MeshBasicMaterial({ color: `#000` });
+      const textMaterial = new THREE.MeshBasicMaterial({ color: `#333` });
       textMesh = new THREE.Mesh(textGeometry, textMaterial);
       textMesh.position.set(3.7, 1.7, -14); // Ajuste a posição do texto conforme necessário
       scene.add(textMesh);
@@ -234,7 +449,6 @@
 
 
 
-  update();
 
   function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
@@ -251,8 +465,8 @@
     return needResize;
   }
 
-  window.addEventListener('click', e => raycast(e));
-  window.addEventListener('touchend', e => raycast(e, true));
+  // window.addEventListener('click', e => raycast(e));
+  // window.addEventListener('touchend', e => raycast(e, true));
 
   function raycast(e, touch = false) {
     var mouse = {};
@@ -281,13 +495,13 @@
       }
     }
   }
- 
+
   // Get a random animation, and play it 
   function playOnClick() {
     let anim = Math.floor(Math.random() * possibleAnims.length) + 0;
     playModifierAnimation(idle, 0.25, possibleAnims[anim], 0.25);
   }
- 
+
   function playModifierAnimation(from, fSpeed, to, tSpeed) {
     to.setLoop(THREE.LoopOnce);
     to.reset();
@@ -300,73 +514,40 @@
     }, to._clip.duration * 1000 - (tSpeed + fSpeed) * 1000);
   }
 
-  // document.addEventListener('click', function (e) {
-  //   var mousecoords = getMousePos(e);
-  //   if (neck && waist) {
 
-  //     // moveToTalk(mousecoords, neck, 50)
-  //     // moveJoint(mousecoords, neck, 50);
-  //     // moveJoint(mousecoords, waist, 30);
-  //   }
-  // });
 
-  // function getMousePos(e) {
-  //   return { x: e.clientX, y: e.clientY };
-  // }
- 
-  //daqui para baixo define movimetos do corpo do boneco
-  // no memomento esta pegando a possicao do mouse para movimentar o boneco
- 
-  // function moveJoint(mouse, joint, degreeLimit) {
-  //   let degrees = getMouseDegrees(mouse.x, mouse.y, degreeLimit);
- 
-  //   // joint.rotation.y = THREE.Math.degToRad(degrees.x);
-  //   // joint.rotation.x = THREE.Math.degToRad(degrees.y);
 
-  //   // console.log(joint.rotation)
-  // }
 
-  // function getMouseDegrees(x, y, degreeLimit) {
-  //   let dx = 0,
-  //     dy = 0,
-  //     xdiff,
-  //     xPercentage,
-  //     ydiff,
-  //     yPercentage;
 
-  //   let w = { x: window.innerWidth, y: window.innerHeight };
 
-  //   // Left (Rotates neck left between 0 and -degreeLimit)
-  //   // 1. If cursor is in the left half of screen
-  //   if (x <= w.x / 2) {
-  //     // 2. Get the difference between middle of screen and cursor position
-  //     xdiff = w.x / 2 - x;
-  //     // 3. Find the percentage of that difference (percentage toward edge of screen)
-  //     xPercentage = xdiff / (w.x / 2) * 100;
-  //     // 4. Convert that to a percentage of the maximum rotation we allow for the neck
-  //     dx = degreeLimit * xPercentage / 100 * -1;
-  //   }
 
-  //   // Right (Rotates neck right between 0 and degreeLimit)
-  //   if (x >= w.x / 2) {
-  //     xdiff = x - w.x / 2;
-  //     xPercentage = xdiff / (w.x / 2) * 100;
-  //     dx = degreeLimit * xPercentage / 100;
-  //   }
-  //   // Up (Rotates neck up between 0 and -degreeLimit)
-  //   if (y <= w.y / 2) {
-  //     ydiff = w.y / 2 - y;
-  //     yPercentage = ydiff / (w.y / 2) * 100;
-  //     // Note that I cut degreeLimit in half when she looks up
-  //     dy = degreeLimit * 0.5 * yPercentage / 100 * -1;
-  //   }
-  //   // Down (Rotates neck down between 0 and degreeLimit)
-  //   if (y >= w.y / 2) {
-  //     ydiff = y - w.y / 2;
-  //     yPercentage = ydiff / (w.y / 2) * 100;
-  //     dy = degreeLimit * yPercentage / 100;
-  //   }
-  //   return { x: dx, y: dy };
-  // }
+  return (
+    <>
 
-})();
+      <div className="wrapper" >
+        <canvas id="c"></canvas>
+      </div>
+
+      <div className="frame">
+        <audio ref={micAudio} controls id="micAudio"></audio>
+        <audio ref={audioReceive} id="audioReceive" controls></audio>
+        <audio ref={audioLoader} id="audioLoader" controls></audio>
+        <h1>{recognitionTranscript}</h1>
+        <div>
+          <button onClick={START}>START</button>
+          <button onClick={STOP}>STOP</button>
+          <button onClick={PAUSE} >PAUSE</button>
+          <button onClick={SEND} >SEND</button>
+        </div>
+        <div className="dialog">
+          <div>
+            <button id="updateText">Update Text</button>
+          </div>
+        </div>
+      </div>
+
+    </>
+  )
+}
+
+export default App
